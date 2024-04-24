@@ -1,0 +1,17 @@
+[deps]
+Clang = "40e3b903-d033-50b4-a0cc-940c62c95e31"
+JLLPrefixes = "afc68a34-7891-4c5a-9da1-1c62935e7b0d"
+aws_c_auth_jll = "2b3700d1-4306-52e2-a478-c162f0c514be"
+aws_c_common_jll = "73048d1d-b8c4-5092-a58d-866c5e8d1e50"
+aws_c_http_jll = "3254fc65-9028-534d-aa9d-d76d128babc6"
+aws_c_io_jll = "13c41daa-f319-5298-b5eb-5754e0170d52"
+aws_c_sdkutils_jll = "1282aa60-004d-510b-9f52-12498d409daa"
+
+[compat]
+Clang = "0.18.3"
+JLLPrefixes = "0.3"
+aws_c_auth_jll = "=0.7.3"
+aws_c_common_jll = "=0.9.15"
+aws_c_http_jll = "=0.7.12"
+aws_c_io_jll = "=0.13.32"
+aws_c_sdkutils_jll = "=0.1.12"

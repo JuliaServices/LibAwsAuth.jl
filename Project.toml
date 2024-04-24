@@ -1,0 +1,23 @@
+name = "LibAwsAuth"
+uuid = "e028494f-7ddb-47cd-bd9c-7e7578dea4c5"
+version = "1.0.0"
+
+[deps]
+CEnum = "fa961155-64e5-5f13-b03f-caf6b980ea82"
+LibAwsSdkutils = "c5f27dc9-c37b-4573-9b6c-b90055172160"
+LibAwsHTTP = "ce851869-0d7a-41e7-95ef-2d4cb63876dd"
+aws_c_auth_jll = "2b3700d1-4306-52e2-a478-c162f0c514be"
+
+[compat]
+Aqua = "0.7"
+CEnum = "0.5"
+LibAwsSdkutils = "1.0.0"
+LibAwsHTTP = "1.0.0"
+julia = "1.6"
+
+[extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Aqua", "Test"]
