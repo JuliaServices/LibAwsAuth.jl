@@ -1,7 +1,12 @@
 module LibAwsAuth
 
 using aws_c_auth_jll
+using LibAwsCal
 using LibAwsCommon
+using LibAwsCompression
+using LibAwsHTTP
+using LibAwsIO
+using LibAwsSdkutils
 
 const IS_LIBC_MUSL = occursin("musl", Base.BUILD_TRIPLET)
 if Sys.isapple() && Sys.ARCH === :aarch64

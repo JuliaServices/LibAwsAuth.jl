@@ -2,10 +2,18 @@ using Clang.Generators
 using Clang.JLLEnvs
 using JLLPrefixes
 import aws_c_auth_jll
+import aws_c_cal_jll
 import aws_c_common_jll
+import aws_c_compression_jll
 import aws_c_http_jll
 import aws_c_io_jll
 import aws_c_sdkutils_jll
+using LibAwsCal
+using LibAwsCommon
+using LibAwsCompression
+using LibAwsHTTP
+using LibAwsIO
+using LibAwsSdkutils
 
 cd(@__DIR__)
 
@@ -40,6 +48,21 @@ function should_skip_target(target)
     return target == "i686-w64-mingw32"
 end
 
+const deps_jlls = [aws_c_cal_jll, aws_c_common_jll, aws_c_compression_jll, aws_c_http_jll, aws_c_io_jll, aws_c_sdkutils_jll]
+const deps = [LibAwsCal, LibAwsCommon, LibAwsCompression, LibAwsHTTP, LibAwsIO, LibAwsSdkutils]
+const deps_names = sort(collect(Iterators.flatten(names.(deps))))
+
+# clang can emit code for forward declarations of structs defined in our dependencies. we need to skip those, otherwise
+# we'll have duplicate struct definitions.
+function skip_nodes_in_dependencies!(dag::ExprDAG)
+    replace!(get_nodes(dag)) do node
+        if insorted(node.id, deps_names)
+            return ExprNode(node.id, Generators.Skip(), node.cursor, Expr[], node.adj)
+        end
+        return node
+    end
+end
+
 # download toolchains in parallel
 Threads.@threads for target in JLLEnvs.JLL_ENV_TRIPLES
     if should_skip_target(target)
@@ -57,8 +80,8 @@ for target in JLLEnvs.JLL_ENV_TRIPLES
     options["general"]["callback_documentation"] = get_docs
 
     args = get_default_args(target)
-    for jll in (aws_c_common_jll, aws_c_http_jll, aws_c_io_jll, aws_c_sdkutils_jll)
-        inc = JLLEnvs.get_pkg_include_dir(jll, target)
+    for dep in deps_jlls
+        inc = JLLEnvs.get_pkg_include_dir(dep, target)
         push!(args, "-isystem$inc")
     end
 
@@ -80,5 +103,7 @@ for target in JLLEnvs.JLL_ENV_TRIPLES
     unique!(headers)
 
     ctx = create_context(headers, args, options)
-    build!(ctx)
+    build!(ctx, BUILDSTAGE_NO_PRINTING)
+    skip_nodes_in_dependencies!(ctx.dag)
+    build!(ctx, BUILDSTAGE_PRINTING_ONLY)
 end

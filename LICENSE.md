@@ -1,4 +1,4 @@
-The LibAwsCommon.jl package is licensed under the MIT "Expat" License:
+The LibAwsAuth.jl package is licensed under the MIT "Expat" License:
 
 > Copyright (c) 2024: Jacob Quinn and Ryan Benasutti
 >

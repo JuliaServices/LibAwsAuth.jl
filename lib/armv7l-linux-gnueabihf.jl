@@ -36,6 +36,9 @@ Auth-specific error codes
     AWS_AUTH_SSO_TOKEN_INVALID = 6169
     AWS_AUTH_SSO_TOKEN_EXPIRED = 6170
     AWS_AUTH_CREDENTIALS_PROVIDER_SSO_SOURCE_FAILURE = 6171
+    AWS_AUTH_IMDS_CLIENT_SOURCE_FAILURE = 6172
+    AWS_AUTH_PROFILE_STS_CREDENTIALS_PROVIDER_CYCLE_FAILURE = 6173
+    AWS_AUTH_CREDENTIALS_PROVIDER_ECS_INVALID_TOKEN_FILE_PATH = 6174
     AWS_AUTH_ERROR_END_RANGE = 7167
 end
 
@@ -124,6 +127,7 @@ struct aws_imds_client_options
     bootstrap::Ptr{aws_client_bootstrap}
     retry_strategy::Ptr{aws_retry_strategy}
     imds_version::aws_imds_protocol_version
+    ec2_metadata_v1_disabled::Bool
     function_table::Ptr{aws_auth_http_system_vtable}
 end
 
@@ -710,11 +714,6 @@ function aws_imds_client_get_instance_info(client, callback, user_data)
     ccall((:aws_imds_client_get_instance_info, libaws_c_auth), Cint, (Ptr{aws_imds_client}, aws_imds_client_on_get_instance_info_callback_fn, Ptr{Cvoid}), client, callback, user_data)
 end
 
-"""
-Documentation not found.
-"""
-mutable struct aws_ecc_key_pair end
-
 # typedef void ( aws_on_get_credentials_callback_fn ) ( struct aws_credentials * credentials , int error_code , void * user_data )
 """
 Documentation not found.
@@ -796,16 +795,6 @@ struct aws_credentials_provider_environment_options
 end
 
 """
-Documentation not found.
-"""
-mutable struct aws_profile_collection end
-
-"""
-Documentation not found.
-"""
-mutable struct aws_tls_ctx end
-
-"""
     aws_credentials_provider_profile_options
 
 Configuration options for a provider that sources credentials from the aws config and credentials files (by default ~/.aws/config and ~/.aws/credentials)
@@ -854,6 +843,7 @@ struct aws_credentials_provider_imds_options
     shutdown_options::aws_credentials_provider_shutdown_options
     bootstrap::Ptr{aws_client_bootstrap}
     imds_version::aws_imds_protocol_version
+    ec2_metadata_v1_disabled::Bool
     function_table::Ptr{aws_auth_http_system_vtable}
 end
 
@@ -870,13 +860,8 @@ struct aws_credentials_provider_ecs_options
     auth_token::aws_byte_cursor
     tls_ctx::Ptr{aws_tls_ctx}
     function_table::Ptr{aws_auth_http_system_vtable}
-    port::UInt16
+    port::UInt32
 end
-
-"""
-Documentation not found.
-"""
-mutable struct aws_http_proxy_options end
 
 """
     aws_credentials_provider_x509_options
@@ -901,7 +886,7 @@ end
 
 Configuration options for the STS web identity provider
 
-Sts with web identity credentials provider sources a set of temporary security credentials for users who have been authenticated in a mobile or web application with a web identity provider. Example providers include Amazon Cognito, Login with Amazon, Facebook, Google, or any OpenID Connect-compatible identity provider like Elastic Kubernetes Service https://docs.aws.amazon.com/STS/latest/APIReference/API\\_AssumeRoleWithWebIdentity.html The required parameters used in the request (region, roleArn, sessionName, tokenFilePath) are automatically resolved by SDK from envrionment variables or config file. --------------------------------------------------------------------------------- | Parameter | Environment Variable Name | Config File Property Name | ---------------------------------------------------------------------------------- | region | AWS\\_DEFAULT\\_REGION | region | | role\\_arn | AWS\\_ROLE\\_ARN | role\\_arn | | role\\_session\\_name | AWS\\_ROLE\\_SESSION\\_NAME | role\\_session\\_name | | token\\_file\\_path | AWS\\_WEB\\_IDENTITY\\_TOKEN\\_FILE | web\\_identity\\_token\\_file | |--------------------------------------------------------------------------------|
+Sts with web identity credentials provider sources a set of temporary security credentials for users who have been authenticated in a mobile or web application with a web identity provider. Example providers include Amazon Cognito, Login with Amazon, Facebook, Google, or any OpenID Connect-compatible identity provider like Elastic Kubernetes Service https://docs.aws.amazon.com/STS/latest/APIReference/API\\_AssumeRoleWithWebIdentity.html The required parameters used in the request (region, roleArn, sessionName, tokenFilePath) are automatically resolved by SDK from envrionment variables or config file if not set. --------------------------------------------------------------------------------- | Parameter | Environment Variable Name | Config File Property Name | ---------------------------------------------------------------------------------- | region | AWS\\_DEFAULT\\_REGION | region | | role\\_arn | AWS\\_ROLE\\_ARN | role\\_arn | | role\\_session\\_name | AWS\\_ROLE\\_SESSION\\_NAME | role\\_session\\_name | | token\\_file\\_path | AWS\\_WEB\\_IDENTITY\\_TOKEN\\_FILE | web\\_identity\\_token\\_file | |--------------------------------------------------------------------------------| The order of resolution is the following 1. Parameters 2. Environment Variables 3. Config File
 """
 struct aws_credentials_provider_sts_web_identity_options
     shutdown_options::aws_credentials_provider_shutdown_options
@@ -910,6 +895,10 @@ struct aws_credentials_provider_sts_web_identity_options
     tls_ctx::Ptr{aws_tls_ctx}
     function_table::Ptr{aws_auth_http_system_vtable}
     profile_name_override::aws_byte_cursor
+    region::aws_byte_cursor
+    role_arn::aws_byte_cursor
+    role_session_name::aws_byte_cursor
+    token_file_path::aws_byte_cursor
 end
 
 """
@@ -970,6 +959,7 @@ struct aws_credentials_provider_chain_default_options
     tls_ctx::Ptr{aws_tls_ctx}
     profile_collection_cached::Ptr{aws_profile_collection}
     profile_name_override::aws_byte_cursor
+    skip_environment_credentials_provider::Bool
 end
 
 # typedef int ( aws_credentials_provider_delegate_get_credentials_fn ) ( void * delegate_user_data , aws_on_get_credentials_callback_fn callback , void * callback_user_data )
@@ -1654,21 +1644,6 @@ function aws_credentials_provider_new_chain_default(allocator, options)
 end
 
 """
-Documentation not found.
-"""
-mutable struct aws_http_message end
-
-"""
-Documentation not found.
-"""
-mutable struct aws_http_headers end
-
-"""
-Documentation not found.
-"""
-mutable struct aws_input_stream end
-
-"""
     aws_signable_property_list_pair
 
 Documentation not found.
@@ -2016,6 +1991,7 @@ What version of the AWS signing process should we use.
 @cenum aws_signing_algorithm::UInt32 begin
     AWS_SIGNING_ALGORITHM_V4 = 0
     AWS_SIGNING_ALGORITHM_V4_ASYMMETRIC = 1
+    AWS_SIGNING_ALGORITHM_V4_S3EXPRESS = 2
 end
 
 """
@@ -2042,35 +2018,6 @@ Controls if signing adds a header containing the canonical request's body value
     AWS_SBHT_NONE = 0
     AWS_SBHT_X_AMZ_CONTENT_SHA256 = 1
 end
-
-"""
-    __JL_Ctag_292
-
-Documentation not found.
-"""
-struct __JL_Ctag_292
-    use_double_uri_encode::UInt32
-    should_normalize_uri_path::UInt32
-    omit_session_token::UInt32
-end
-function Base.getproperty(x::Ptr{__JL_Ctag_292}, f::Symbol)
-    f === :use_double_uri_encode && return (Ptr{UInt32}(x + 0), 0, 1)
-    f === :should_normalize_uri_path && return (Ptr{UInt32}(x + 0), 1, 1)
-    f === :omit_session_token && return (Ptr{UInt32}(x + 0), 2, 1)
-    return getfield(x, f)
-end
-
-function Base.getproperty(x::__JL_Ctag_292, f::Symbol)
-    r = Ref{__JL_Ctag_292}(x)
-    ptr = Base.unsafe_convert(Ptr{__JL_Ctag_292}, r)
-    fptr = getproperty(ptr, f)
-    GC.@preserve r unsafe_load(fptr)
-end
-
-function Base.setproperty!(x::Ptr{__JL_Ctag_292}, f::Symbol, v)
-    unsafe_store!(getproperty(x, f), v)
-end
-
 
 """
     aws_signing_config_aws
