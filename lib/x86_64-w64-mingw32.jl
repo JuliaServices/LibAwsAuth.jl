@@ -880,6 +880,18 @@ struct aws_credentials_provider_imds_options
 end
 
 """
+    aws_credentials_provider_ecs_environment_options
+
+Documentation not found.
+"""
+struct aws_credentials_provider_ecs_environment_options
+    shutdown_options::aws_credentials_provider_shutdown_options
+    bootstrap::Ptr{aws_client_bootstrap}
+    tls_ctx::Ptr{aws_tls_ctx}
+    function_table::Ptr{aws_auth_http_system_vtable}
+end
+
+"""
     aws_credentials_provider_ecs_options
 
 Documentation not found.
@@ -889,6 +901,7 @@ struct aws_credentials_provider_ecs_options
     bootstrap::Ptr{aws_client_bootstrap}
     host::aws_byte_cursor
     path_and_query::aws_byte_cursor
+    auth_token_file_path::aws_byte_cursor
     auth_token::aws_byte_cursor
     tls_ctx::Ptr{aws_tls_ctx}
     function_table::Ptr{aws_auth_http_system_vtable}
@@ -918,7 +931,7 @@ end
 
 Configuration options for the STS web identity provider
 
-Sts with web identity credentials provider sources a set of temporary security credentials for users who have been authenticated in a mobile or web application with a web identity provider. Example providers include Amazon Cognito, Login with Amazon, Facebook, Google, or any OpenID Connect-compatible identity provider like Elastic Kubernetes Service https://docs.aws.amazon.com/STS/latest/APIReference/API\\_AssumeRoleWithWebIdentity.html The required parameters used in the request (region, roleArn, sessionName, tokenFilePath) are automatically resolved by SDK from envrionment variables or config file if not set. --------------------------------------------------------------------------------- | Parameter | Environment Variable Name | Config File Property Name | ---------------------------------------------------------------------------------- | region | AWS\\_DEFAULT\\_REGION | region | | role\\_arn | AWS\\_ROLE\\_ARN | role\\_arn | | role\\_session\\_name | AWS\\_ROLE\\_SESSION\\_NAME | role\\_session\\_name | | token\\_file\\_path | AWS\\_WEB\\_IDENTITY\\_TOKEN\\_FILE | web\\_identity\\_token\\_file | |--------------------------------------------------------------------------------| The order of resolution is the following 1. Parameters 2. Environment Variables 3. Config File
+Sts with web identity credentials provider sources a set of temporary security credentials for users who have been authenticated in a mobile or web application with a web identity provider. Example providers include Amazon Cognito, Login with Amazon, Facebook, Google, or any OpenID Connect-compatible identity provider like Elastic Kubernetes Service https://docs.aws.amazon.com/STS/latest/APIReference/API\\_AssumeRoleWithWebIdentity.html The required parameters used in the request (region, roleArn, sessionName, tokenFilePath) are automatically resolved by SDK from envrionment variables or config file if not set. --------------------------------------------------------------------------------- | Parameter | Environment Variable Name | Config File Property Name | ---------------------------------------------------------------------------------- | region | AWS\\_REGION/AWS\\_DEFAULT\\_REGION| region | | role\\_arn | AWS\\_ROLE\\_ARN | role\\_arn | | role\\_session\\_name | AWS\\_ROLE\\_SESSION\\_NAME | role\\_session\\_name | | token\\_file\\_path | AWS\\_WEB\\_IDENTITY\\_TOKEN\\_FILE | web\\_identity\\_token\\_file | |--------------------------------------------------------------------------------| The order of resolution is the following 1. Parameters 2. Environment Variables (in case of region, the AWS\\_REGION is preferred over the AWS\\_DEFAULT\\_REGION) 3. Config File
 """
 struct aws_credentials_provider_sts_web_identity_options
     shutdown_options::aws_credentials_provider_shutdown_options
@@ -952,7 +965,7 @@ end
 """
     aws_credentials_provider_sts_options
 
-Configuration options for the STS credentials provider
+Configuration options for the STS credentials provider. STS Credentials Provider will try to automatically resolve the region and use a regional STS endpoint if successful. The region resolution order is the following: 1. AWS\\_REGION environment variable 2. AWS\\_DEFAULT\\_REGION environment variable 3. The region property in the config file.
 """
 struct aws_credentials_provider_sts_options
     bootstrap::Ptr{aws_client_bootstrap}
@@ -962,6 +975,9 @@ struct aws_credentials_provider_sts_options
     session_name::aws_byte_cursor
     duration_seconds::UInt16
     http_proxy_options::Ptr{aws_http_proxy_options}
+    profile_collection_cached::Ptr{aws_profile_collection}
+    profile_name_override::aws_byte_cursor
+    config_file_name_override::aws_byte_cursor
     shutdown_options::aws_credentials_provider_shutdown_options
     function_table::Ptr{aws_auth_http_system_vtable}
     system_clock_fn::Ptr{aws_io_clock_fn}
@@ -1505,9 +1521,28 @@ function aws_credentials_provider_new_imds(allocator, options)
 end
 
 """
+    aws_credentials_provider_new_ecs_from_environment(allocator, options)
+
+Creates a provider that sources credentials from the ecs role credentials service and reads the required params from environment variables
+
+# Arguments
+* `allocator`: memory allocator to use for all memory allocation
+* `options`: provider-specific configuration options
+# Returns
+the newly-constructed credentials provider, or NULL if an error occurred.
+### Prototype
+```c
+struct aws_credentials_provider *aws_credentials_provider_new_ecs_from_environment( struct aws_allocator *allocator, const struct aws_credentials_provider_ecs_environment_options *options);
+```
+"""
+function aws_credentials_provider_new_ecs_from_environment(allocator, options)
+    ccall((:aws_credentials_provider_new_ecs_from_environment, libaws_c_auth), Ptr{aws_credentials_provider}, (Ptr{aws_allocator}, Ptr{aws_credentials_provider_ecs_environment_options}), allocator, options)
+end
+
+"""
     aws_credentials_provider_new_ecs(allocator, options)
 
-Creates a provider that sources credentials from the ecs role credentials service
+Creates a provider that sources credentials from the ecs role credentials service This function doesn't read anything from the environment and requires everything to be explicitly passed in. If you need to read properties from the environment, use the [`aws_credentials_provider_new_ecs_from_environment`](@ref).
 
 # Arguments
 * `allocator`: memory allocator to use for all memory allocation
