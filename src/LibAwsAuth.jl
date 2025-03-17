@@ -49,4 +49,15 @@ for name in names(@__MODULE__; all=true)
     @eval export $name
 end
 
+function init(allocator=default_aws_allocator())
+    LibAwsCommon.init(allocator)
+    LibAwsCal.init(allocator)
+    LibAwsCompression.init(allocator)
+    LibAwsIO.init(allocator)
+    LibAwsHTTP.init(allocator)
+    LibAwsSdkutils.init(allocator)
+    aws_auth_library_init(allocator)
+    return
+end
+
 end
