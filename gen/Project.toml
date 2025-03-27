@@ -18,4 +18,4 @@ aws_c_sdkutils_jll = "1282aa60-004d-510b-9f52-12498d409daa"
 [compat]
 Clang = "0.18.3"
 JLLPrefixes = "0.3"
-aws_c_auth_jll = "=0.7.22"
+aws_c_auth_jll = "=0.9.0"

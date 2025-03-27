@@ -39,6 +39,7 @@ Auth-specific error codes
     AWS_AUTH_IMDS_CLIENT_SOURCE_FAILURE = 6172
     AWS_AUTH_PROFILE_STS_CREDENTIALS_PROVIDER_CYCLE_FAILURE = 6173
     AWS_AUTH_CREDENTIALS_PROVIDER_ECS_INVALID_TOKEN_FILE_PATH = 6174
+    AWS_AUTH_CREDENTIALS_PROVIDER_ECS_INVALID_HOST = 6175
     AWS_AUTH_ERROR_END_RANGE = 7167
 end
 
@@ -783,6 +784,7 @@ struct aws_credentials_provider_static_options
     access_key_id::aws_byte_cursor
     secret_access_key::aws_byte_cursor
     session_token::aws_byte_cursor
+    account_id::aws_byte_cursor
 end
 
 """
@@ -848,6 +850,18 @@ struct aws_credentials_provider_imds_options
 end
 
 """
+    aws_credentials_provider_ecs_environment_options
+
+Documentation not found.
+"""
+struct aws_credentials_provider_ecs_environment_options
+    shutdown_options::aws_credentials_provider_shutdown_options
+    bootstrap::Ptr{aws_client_bootstrap}
+    tls_ctx::Ptr{aws_tls_ctx}
+    function_table::Ptr{aws_auth_http_system_vtable}
+end
+
+"""
     aws_credentials_provider_ecs_options
 
 Documentation not found.
@@ -857,6 +871,7 @@ struct aws_credentials_provider_ecs_options
     bootstrap::Ptr{aws_client_bootstrap}
     host::aws_byte_cursor
     path_and_query::aws_byte_cursor
+    auth_token_file_path::aws_byte_cursor
     auth_token::aws_byte_cursor
     tls_ctx::Ptr{aws_tls_ctx}
     function_table::Ptr{aws_auth_http_system_vtable}
@@ -886,7 +901,7 @@ end
 
 Configuration options for the STS web identity provider
 
-Sts with web identity credentials provider sources a set of temporary security credentials for users who have been authenticated in a mobile or web application with a web identity provider. Example providers include Amazon Cognito, Login with Amazon, Facebook, Google, or any OpenID Connect-compatible identity provider like Elastic Kubernetes Service https://docs.aws.amazon.com/STS/latest/APIReference/API\\_AssumeRoleWithWebIdentity.html The required parameters used in the request (region, roleArn, sessionName, tokenFilePath) are automatically resolved by SDK from envrionment variables or config file if not set. --------------------------------------------------------------------------------- | Parameter | Environment Variable Name | Config File Property Name | ---------------------------------------------------------------------------------- | region | AWS\\_DEFAULT\\_REGION | region | | role\\_arn | AWS\\_ROLE\\_ARN | role\\_arn | | role\\_session\\_name | AWS\\_ROLE\\_SESSION\\_NAME | role\\_session\\_name | | token\\_file\\_path | AWS\\_WEB\\_IDENTITY\\_TOKEN\\_FILE | web\\_identity\\_token\\_file | |--------------------------------------------------------------------------------| The order of resolution is the following 1. Parameters 2. Environment Variables 3. Config File
+Sts with web identity credentials provider sources a set of temporary security credentials for users who have been authenticated in a mobile or web application with a web identity provider. Example providers include Amazon Cognito, Login with Amazon, Facebook, Google, or any OpenID Connect-compatible identity provider like Elastic Kubernetes Service https://docs.aws.amazon.com/STS/latest/APIReference/API\\_AssumeRoleWithWebIdentity.html The required parameters used in the request (region, roleArn, sessionName, tokenFilePath) are automatically resolved by SDK from envrionment variables or config file if not set. --------------------------------------------------------------------------------- | Parameter | Environment Variable Name | Config File Property Name | ---------------------------------------------------------------------------------- | region | AWS\\_REGION/AWS\\_DEFAULT\\_REGION| region | | role\\_arn | AWS\\_ROLE\\_ARN | role\\_arn | | role\\_session\\_name | AWS\\_ROLE\\_SESSION\\_NAME | role\\_session\\_name | | token\\_file\\_path | AWS\\_WEB\\_IDENTITY\\_TOKEN\\_FILE | web\\_identity\\_token\\_file | |--------------------------------------------------------------------------------| The order of resolution is the following 1. Parameters 2. Environment Variables (in case of region, the AWS\\_REGION is preferred over the AWS\\_DEFAULT\\_REGION) 3. Config File
 """
 struct aws_credentials_provider_sts_web_identity_options
     shutdown_options::aws_credentials_provider_shutdown_options
@@ -920,7 +935,7 @@ end
 """
     aws_credentials_provider_sts_options
 
-Configuration options for the STS credentials provider
+Configuration options for the STS credentials provider. STS Credentials Provider will try to automatically resolve the region and use a regional STS endpoint if successful. The region resolution order is the following: 1. AWS\\_REGION environment variable 2. AWS\\_DEFAULT\\_REGION environment variable 3. The region property in the config file.
 """
 struct aws_credentials_provider_sts_options
     bootstrap::Ptr{aws_client_bootstrap}
@@ -928,8 +943,12 @@ struct aws_credentials_provider_sts_options
     creds_provider::Ptr{aws_credentials_provider}
     role_arn::aws_byte_cursor
     session_name::aws_byte_cursor
+    external_id::aws_byte_cursor
     duration_seconds::UInt16
     http_proxy_options::Ptr{aws_http_proxy_options}
+    profile_collection_cached::Ptr{aws_profile_collection}
+    profile_name_override::aws_byte_cursor
+    config_file_name_override::aws_byte_cursor
     shutdown_options::aws_credentials_provider_shutdown_options
     function_table::Ptr{aws_auth_http_system_vtable}
     system_clock_fn::Ptr{aws_io_clock_fn}
@@ -989,6 +1008,18 @@ struct aws_cognito_identity_provider_token_pair
     identity_provider_token::aws_byte_cursor
 end
 
+# typedef void ( aws_credentials_provider_cognito_get_token_pairs_completion_fn ) ( struct aws_cognito_identity_provider_token_pair * logins , size_t login_count , int error_code , void * completion_user_data )
+"""
+Documentation not found.
+"""
+const aws_credentials_provider_cognito_get_token_pairs_completion_fn = Cvoid
+
+# typedef int ( aws_credentials_provider_cognito_get_token_pairs_async_fn ) ( void * get_token_pairs_user_data , aws_credentials_provider_cognito_get_token_pairs_completion_fn * completion_callback , void * completion_user_data )
+"""
+Documentation not found.
+"""
+const aws_credentials_provider_cognito_get_token_pairs_async_fn = Cvoid
+
 """
     aws_credentials_provider_cognito_options
 
@@ -1005,6 +1036,21 @@ struct aws_credentials_provider_cognito_options
     tls_ctx::Ptr{aws_tls_ctx}
     http_proxy_options::Ptr{aws_http_proxy_options}
     function_table::Ptr{aws_auth_http_system_vtable}
+    get_token_pairs::Ptr{aws_credentials_provider_cognito_get_token_pairs_async_fn}
+    get_token_pairs_user_data::Ptr{Cvoid}
+end
+
+"""
+    aws_credentials_options
+
+Configuration options for [`aws_credentials_new_with_options`](@ref)
+"""
+struct aws_credentials_options
+    access_key_id_cursor::aws_byte_cursor
+    secret_access_key_cursor::aws_byte_cursor
+    session_token_cursor::aws_byte_cursor
+    account_id_cursor::aws_byte_cursor
+    expiration_timepoint_seconds::UInt64
 end
 
 """
@@ -1032,6 +1078,29 @@ struct aws_credentials *aws_credentials_new( struct aws_allocator *allocator, st
 """
 function aws_credentials_new(allocator, access_key_id_cursor, secret_access_key_cursor, session_token_cursor, expiration_timepoint_seconds)
     ccall((:aws_credentials_new, libaws_c_auth), Ptr{aws_credentials}, (Ptr{aws_allocator}, aws_byte_cursor, aws_byte_cursor, aws_byte_cursor, UInt64), allocator, access_key_id_cursor, secret_access_key_cursor, session_token_cursor, expiration_timepoint_seconds)
+end
+
+"""
+    aws_credentials_new_with_options(allocator, options)
+
+Creates a new set of aws credentials with account\\_id
+
+# Arguments
+* `allocator`: memory allocator to use
+* `access_key_id_cursor`: value for the aws access key id field
+* `secret_access_key_cursor`: value for the secret access key field
+* `session_token_cursor`: (optional) security token associated with the credentials
+* `account_id`: (optional) value for the account\\_id field
+* `expiration_timepoint_seconds`: timepoint, in seconds since epoch, that the credentials will no longer be valid past. For credentials that do not expire, use UINT64\\_MAX
+# Returns
+a valid credentials object, or NULL
+### Prototype
+```c
+struct aws_credentials *aws_credentials_new_with_options( struct aws_allocator *allocator, const struct aws_credentials_options *options);
+```
+"""
+function aws_credentials_new_with_options(allocator, options)
+    ccall((:aws_credentials_new_with_options, libaws_c_auth), Ptr{aws_credentials}, (Ptr{aws_allocator}, Ptr{aws_credentials_options}), allocator, options)
 end
 
 """
@@ -1196,6 +1265,24 @@ function aws_credentials_get_session_token(credentials)
 end
 
 """
+    aws_credentials_get_account_id(credentials)
+
+Get the AWS account id from a set of credentials
+
+# Arguments
+* `credentials`: to get the account id from
+# Returns
+a byte cursor to the account id or an empty byte cursor if there is no account id
+### Prototype
+```c
+struct aws_byte_cursor aws_credentials_get_account_id(const struct aws_credentials *credentials);
+```
+"""
+function aws_credentials_get_account_id(credentials)
+    ccall((:aws_credentials_get_account_id, libaws_c_auth), aws_byte_cursor, (Ptr{aws_credentials},), credentials)
+end
+
+"""
     aws_credentials_get_expiration_timepoint_seconds(credentials)
 
 Get the expiration timepoint (in seconds since epoch) associated with a set of credentials
@@ -1256,7 +1343,7 @@ Derives an ecc key pair (based on the nist P256 curve) from the access key id an
 
 # Arguments
 * `allocator`: memory allocator to use for all memory allocation
-* `credentials`: AWS credentials to derive the ECC key from using the AWS sigv4a key deriviation specification
+* `credentials`: AWS credentials to derive the ECC key from using the AWS sigv4a key derivation specification
 # Returns
 a new ecc key pair or NULL on failure
 ### Prototype
@@ -1473,9 +1560,28 @@ function aws_credentials_provider_new_imds(allocator, options)
 end
 
 """
+    aws_credentials_provider_new_ecs_from_environment(allocator, options)
+
+Creates a provider that sources credentials from the ecs role credentials service and reads the required params from environment variables
+
+# Arguments
+* `allocator`: memory allocator to use for all memory allocation
+* `options`: provider-specific configuration options
+# Returns
+the newly-constructed credentials provider, or NULL if an error occurred.
+### Prototype
+```c
+struct aws_credentials_provider *aws_credentials_provider_new_ecs_from_environment( struct aws_allocator *allocator, const struct aws_credentials_provider_ecs_environment_options *options);
+```
+"""
+function aws_credentials_provider_new_ecs_from_environment(allocator, options)
+    ccall((:aws_credentials_provider_new_ecs_from_environment, libaws_c_auth), Ptr{aws_credentials_provider}, (Ptr{aws_allocator}, Ptr{aws_credentials_provider_ecs_environment_options}), allocator, options)
+end
+
+"""
     aws_credentials_provider_new_ecs(allocator, options)
 
-Creates a provider that sources credentials from the ecs role credentials service
+Creates a provider that sources credentials from the ecs role credentials service This function doesn't read anything from the environment and requires everything to be explicitly passed in. If you need to read properties from the environment, use the [`aws_credentials_provider_new_ecs_from_environment`](@ref).
 
 # Arguments
 * `allocator`: memory allocator to use for all memory allocation
@@ -1625,7 +1731,7 @@ Creates the default provider chain used by most AWS SDKs.
 
 Generally:
 
-(1) Environment (2) Profile (3) STS web identity (4) (conditional, off by default) ECS (5) (conditional, on by default) EC2 Instance Metadata
+(1) Environment (2) Profile - STSCredentialsProvider - ProcessCredentialsProvider - ProfileCredentialsProvider (3) STS web identity (4) (conditional, off by default) ECS (5) (conditional, on by default) EC2 Instance Metadata
 
 Support for environmental control of the default provider chain is not yet implemented.
 
@@ -2020,33 +2126,63 @@ Controls if signing adds a header containing the canonical request's body value
 end
 
 """
-    __JL_Ctag_285
+    struct (unnamed at /home/runner/.julia/artifacts/b2ced2585edc49fe2f249c066810ccdc07bf1dcc/include/aws/auth/signing_config.h:214:5)
 
 Documentation not found.
 """
-struct __JL_Ctag_285
-    use_double_uri_encode::UInt32
-    should_normalize_uri_path::UInt32
-    omit_session_token::UInt32
+struct var"struct (unnamed at /home/runner/.julia/artifacts/b2ced2585edc49fe2f249c066810ccdc07bf1dcc/include/aws/auth/signing_config.h:214:5)"
+    data::NTuple{4, UInt8}
 end
-function Base.getproperty(x::Ptr{__JL_Ctag_285}, f::Symbol)
+
+function Base.getproperty(x::Ptr{var"struct (unnamed at /home/runner/.julia/artifacts/b2ced2585edc49fe2f249c066810ccdc07bf1dcc/include/aws/auth/signing_config.h:214:5)"}, f::Symbol)
     f === :use_double_uri_encode && return (Ptr{UInt32}(x + 0), 0, 1)
     f === :should_normalize_uri_path && return (Ptr{UInt32}(x + 0), 1, 1)
     f === :omit_session_token && return (Ptr{UInt32}(x + 0), 2, 1)
     return getfield(x, f)
 end
 
-function Base.getproperty(x::__JL_Ctag_285, f::Symbol)
-    r = Ref{__JL_Ctag_285}(x)
-    ptr = Base.unsafe_convert(Ptr{__JL_Ctag_285}, r)
+function Base.getproperty(x::var"struct (unnamed at /home/runner/.julia/artifacts/b2ced2585edc49fe2f249c066810ccdc07bf1dcc/include/aws/auth/signing_config.h:214:5)", f::Symbol)
+    r = Ref{var"struct (unnamed at /home/runner/.julia/artifacts/b2ced2585edc49fe2f249c066810ccdc07bf1dcc/include/aws/auth/signing_config.h:214:5)"}(x)
+    ptr = Base.unsafe_convert(Ptr{var"struct (unnamed at /home/runner/.julia/artifacts/b2ced2585edc49fe2f249c066810ccdc07bf1dcc/include/aws/auth/signing_config.h:214:5)"}, r)
     fptr = getproperty(ptr, f)
-    GC.@preserve r unsafe_load(fptr)
+    begin
+        if fptr isa Ptr
+            return GC.@preserve(r, unsafe_load(fptr))
+        else
+            (baseptr, offset, width) = fptr
+            ty = eltype(baseptr)
+            baseptr32 = convert(Ptr{UInt32}, baseptr)
+            u64 = GC.@preserve(r, unsafe_load(baseptr32))
+            if offset + width > 32
+                u64 |= GC.@preserve(r, unsafe_load(baseptr32 + 4)) << 32
+            end
+            u64 = u64 >> offset & (1 << width - 1)
+            return u64 % ty
+        end
+    end
 end
 
-function Base.setproperty!(x::Ptr{__JL_Ctag_285}, f::Symbol, v)
-    unsafe_store!(getproperty(x, f), v)
+function Base.setproperty!(x::Ptr{var"struct (unnamed at /home/runner/.julia/artifacts/b2ced2585edc49fe2f249c066810ccdc07bf1dcc/include/aws/auth/signing_config.h:214:5)"}, f::Symbol, v)
+    fptr = getproperty(x, f)
+    if fptr isa Ptr
+        unsafe_store!(getproperty(x, f), v)
+    else
+        (baseptr, offset, width) = fptr
+        baseptr32 = convert(Ptr{UInt32}, baseptr)
+        u64 = unsafe_load(baseptr32)
+        straddle = offset + width > 32
+        if straddle
+            u64 |= unsafe_load(baseptr32 + 4) << 32
+        end
+        mask = 1 << width - 1
+        u64 &= ~(mask << offset)
+        u64 |= (unsigned(v) & mask) << offset
+        unsafe_store!(baseptr32, u64 & typemax(UInt32))
+        if straddle
+            unsafe_store!(baseptr32 + 4, u64 >> 32)
+        end
+    end
 end
-
 
 """
     aws_signing_config_aws
@@ -2066,7 +2202,7 @@ function Base.getproperty(x::Ptr{aws_signing_config_aws}, f::Symbol)
     f === :date && return Ptr{aws_date_time}(x + 48)
     f === :should_sign_header && return Ptr{Ptr{aws_should_sign_header_fn}}(x + 184)
     f === :should_sign_header_ud && return Ptr{Ptr{Cvoid}}(x + 192)
-    f === :flags && return Ptr{__JL_Ctag_285}(x + 200)
+    f === :flags && return Ptr{var"struct (unnamed at /home/runner/.julia/artifacts/b2ced2585edc49fe2f249c066810ccdc07bf1dcc/include/aws/auth/signing_config.h:214:5)"}(x + 200)
     f === :signed_body_value && return Ptr{aws_byte_cursor}(x + 208)
     f === :signed_body_header && return Ptr{aws_signed_body_header_type}(x + 224)
     f === :credentials && return Ptr{Ptr{aws_credentials}}(x + 232)
