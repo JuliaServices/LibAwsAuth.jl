@@ -2158,24 +2158,24 @@ Controls if signing adds a header containing the canonical request's body value
 end
 
 """
-    struct (unnamed at /home/runner/.julia/artifacts/6dd82841e625f5e7f446e8b0636926c5adcb9f97/include/aws/auth/signing_config.h:214:5)
+    struct (unnamed at /home/runner/.julia/artifacts/3535fa64ff666f2b16eaf85ce67d9a43ab4ec5c3/include/aws/auth/signing_config.h:214:5)
 
 Documentation not found.
 """
-struct var"struct (unnamed at /home/runner/.julia/artifacts/6dd82841e625f5e7f446e8b0636926c5adcb9f97/include/aws/auth/signing_config.h:214:5)"
+struct var"struct (unnamed at /home/runner/.julia/artifacts/3535fa64ff666f2b16eaf85ce67d9a43ab4ec5c3/include/aws/auth/signing_config.h:214:5)"
     data::NTuple{4, UInt8}
 end
 
-function Base.getproperty(x::Ptr{var"struct (unnamed at /home/runner/.julia/artifacts/6dd82841e625f5e7f446e8b0636926c5adcb9f97/include/aws/auth/signing_config.h:214:5)"}, f::Symbol)
+function Base.getproperty(x::Ptr{var"struct (unnamed at /home/runner/.julia/artifacts/3535fa64ff666f2b16eaf85ce67d9a43ab4ec5c3/include/aws/auth/signing_config.h:214:5)"}, f::Symbol)
     f === :use_double_uri_encode && return (Ptr{UInt32}(x + 0), 0, 1)
     f === :should_normalize_uri_path && return (Ptr{UInt32}(x + 0), 1, 1)
     f === :omit_session_token && return (Ptr{UInt32}(x + 0), 2, 1)
     return getfield(x, f)
 end
 
-function Base.getproperty(x::var"struct (unnamed at /home/runner/.julia/artifacts/6dd82841e625f5e7f446e8b0636926c5adcb9f97/include/aws/auth/signing_config.h:214:5)", f::Symbol)
-    r = Ref{var"struct (unnamed at /home/runner/.julia/artifacts/6dd82841e625f5e7f446e8b0636926c5adcb9f97/include/aws/auth/signing_config.h:214:5)"}(x)
-    ptr = Base.unsafe_convert(Ptr{var"struct (unnamed at /home/runner/.julia/artifacts/6dd82841e625f5e7f446e8b0636926c5adcb9f97/include/aws/auth/signing_config.h:214:5)"}, r)
+function Base.getproperty(x::var"struct (unnamed at /home/runner/.julia/artifacts/3535fa64ff666f2b16eaf85ce67d9a43ab4ec5c3/include/aws/auth/signing_config.h:214:5)", f::Symbol)
+    r = Ref{var"struct (unnamed at /home/runner/.julia/artifacts/3535fa64ff666f2b16eaf85ce67d9a43ab4ec5c3/include/aws/auth/signing_config.h:214:5)"}(x)
+    ptr = Base.unsafe_convert(Ptr{var"struct (unnamed at /home/runner/.julia/artifacts/3535fa64ff666f2b16eaf85ce67d9a43ab4ec5c3/include/aws/auth/signing_config.h:214:5)"}, r)
     fptr = getproperty(ptr, f)
     begin
         if fptr isa Ptr
@@ -2194,7 +2194,7 @@ function Base.getproperty(x::var"struct (unnamed at /home/runner/.julia/artifact
     end
 end
 
-function Base.setproperty!(x::Ptr{var"struct (unnamed at /home/runner/.julia/artifacts/6dd82841e625f5e7f446e8b0636926c5adcb9f97/include/aws/auth/signing_config.h:214:5)"}, f::Symbol, v)
+function Base.setproperty!(x::Ptr{var"struct (unnamed at /home/runner/.julia/artifacts/3535fa64ff666f2b16eaf85ce67d9a43ab4ec5c3/include/aws/auth/signing_config.h:214:5)"}, f::Symbol, v)
     fptr = getproperty(x, f)
     if fptr isa Ptr
         unsafe_store!(getproperty(x, f), v)
@@ -2234,7 +2234,7 @@ function Base.getproperty(x::Ptr{aws_signing_config_aws}, f::Symbol)
     f === :date && return Ptr{aws_date_time}(x + 48)
     f === :should_sign_header && return Ptr{Ptr{aws_should_sign_header_fn}}(x + 144)
     f === :should_sign_header_ud && return Ptr{Ptr{Cvoid}}(x + 152)
-    f === :flags && return Ptr{var"struct (unnamed at /home/runner/.julia/artifacts/6dd82841e625f5e7f446e8b0636926c5adcb9f97/include/aws/auth/signing_config.h:214:5)"}(x + 160)
+    f === :flags && return Ptr{var"struct (unnamed at /home/runner/.julia/artifacts/3535fa64ff666f2b16eaf85ce67d9a43ab4ec5c3/include/aws/auth/signing_config.h:214:5)"}(x + 160)
     f === :signed_body_value && return Ptr{aws_byte_cursor}(x + 168)
     f === :signed_body_header && return Ptr{aws_signed_body_header_type}(x + 184)
     f === :credentials && return Ptr{Ptr{aws_credentials}}(x + 192)
