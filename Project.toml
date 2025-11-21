@@ -1,6 +1,6 @@
 name = "LibAwsAuth"
 uuid = "e028494f-7ddb-47cd-bd9c-7e7578dea4c5"
-version = "1.0.2"
+version = "1.0.3"
 
 [deps]
 CEnum = "fa961155-64e5-5f13-b03f-caf6b980ea82"
@@ -22,7 +22,7 @@ LibAwsHTTP = "1.2.0"
 LibAwsIO = "1.1.0"
 LibAwsSdkutils = "1.1.0"
 Test = "1.11"
-aws_c_auth_jll = "=0.9.1"
+aws_c_auth_jll = "=0.9.2"
 julia = "1.6"
 
 [extras]
