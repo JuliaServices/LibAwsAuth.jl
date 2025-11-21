@@ -1,4 +1,4 @@
-using CEnum
+using CEnum: CEnum, @cenum
 
 """
     aws_auth_errors
@@ -40,6 +40,16 @@ Auth-specific error codes
     AWS_AUTH_PROFILE_STS_CREDENTIALS_PROVIDER_CYCLE_FAILURE = 6173
     AWS_AUTH_CREDENTIALS_PROVIDER_ECS_INVALID_TOKEN_FILE_PATH = 6174
     AWS_AUTH_CREDENTIALS_PROVIDER_ECS_INVALID_HOST = 6175
+    AWS_AUTH_CREDENTIALS_PROVIDER_LOGIN_SESSION_MISSING = 6176
+    AWS_AUTH_CREDENTIALS_PROVIDER_LOGIN_REGION_MISSING = 6177
+    AWS_AUTH_CREDENTIALS_PROVIDER_LOGIN_FAILED_TO_CREATE_TOKEN_PATH = 6178
+    AWS_AUTH_CREDENTIALS_PROVIDER_LOGIN_FAILED_TO_CREATE_TOKEN = 6179
+    AWS_AUTH_CREDENTIALS_PROVIDER_LOGIN_TOKEN_EXPIRED = 6180
+    AWS_AUTH_CREDENTIALS_PROVIDER_LOGIN_INVALID_PEM = 6181
+    AWS_AUTH_CREDENTIALS_PROVIDER_LOGIN_FAILED_TO_CREATE_REFRESH_TOKEN = 6182
+    AWS_AUTH_CREDENTIALS_PROVIDER_LOGIN_FAILED_TO_WRITE_TOKEN = 6183
+    AWS_AUTH_CREDENTIALS_PROVIDER_LOGIN_FAILED_TO_CREATE_DPOP_HEADER = 6184
+    AWS_AUTH_CREDENTIALS_PROVIDER_LOGIN_FAILED_TO_CREATE_REQUEST_BODY = 6185
     AWS_AUTH_ERROR_END_RANGE = 7167
 end
 
@@ -1041,6 +1051,25 @@ struct aws_credentials_provider_cognito_options
 end
 
 """
+    aws_credentials_provider_login_options
+
+Documentation not found.
+"""
+struct aws_credentials_provider_login_options
+    shutdown_options::aws_credentials_provider_shutdown_options
+    login_session::aws_byte_cursor
+    login_region::aws_byte_cursor
+    login_cache_directory_override::aws_byte_cursor
+    profile_name_override::aws_byte_cursor
+    config_file_name_override::aws_byte_cursor
+    config_file_cached::Ptr{aws_profile_collection}
+    bootstrap::Ptr{aws_client_bootstrap}
+    tls_ctx::Ptr{aws_tls_ctx}
+    function_table::Ptr{aws_auth_http_system_vtable}
+    system_clock_fn::Ptr{aws_io_clock_fn}
+end
+
+"""
     aws_credentials_options
 
 Configuration options for [`aws_credentials_new_with_options`](@ref)
@@ -1149,7 +1178,7 @@ end
 Creates a set of AWS credentials that includes an ECC key pair. These credentials do not have a value for the secret access key; the ecc key takes over that field's role in sigv4a signing.
 
 # Arguments
-* `allocator`: memory allocator to use for all memory allocation
+* `allocator`: memory allocator to use for all memory allocations
 * `access_key_id`: access key id for the credential set
 * `ecc_key`: ecc key to use during signing when using these credentials
 * `session_token`: (optional) session token associated with the credentials
@@ -1342,7 +1371,7 @@ end
 Derives an ecc key pair (based on the nist P256 curve) from the access key id and secret access key components of a set of AWS credentials using an internal key derivation specification. Used to perform sigv4a signing in the hybrid mode based on AWS credentials.
 
 # Arguments
-* `allocator`: memory allocator to use for all memory allocation
+* `allocator`: memory allocator to use for all memory allocations
 * `credentials`: AWS credentials to derive the ECC key from using the AWS sigv4a key derivation specification
 # Returns
 a new ecc key pair or NULL on failure
@@ -1722,6 +1751,25 @@ struct aws_credentials_provider *aws_credentials_provider_new_cognito_caching( s
 """
 function aws_credentials_provider_new_cognito_caching(allocator, options)
     ccall((:aws_credentials_provider_new_cognito_caching, libaws_c_auth), Ptr{aws_credentials_provider}, (Ptr{aws_allocator}, Ptr{aws_credentials_provider_cognito_options}), allocator, options)
+end
+
+"""
+    aws_credentials_provider_new_login(allocator, options)
+
+Creates a provider that sources credentials from AWS Login.
+
+# Arguments
+* `allocator`: memory allocator to use for all memory allocation
+* `options`: provider-specific configuration options
+# Returns
+the newly-constructed credentials provider, or NULL if an error occurred.
+### Prototype
+```c
+struct aws_credentials_provider *aws_credentials_provider_new_login( struct aws_allocator *allocator, const struct aws_credentials_provider_login_options *options);
+```
+"""
+function aws_credentials_provider_new_login(allocator, options)
+    ccall((:aws_credentials_provider_new_login, libaws_c_auth), Ptr{aws_credentials_provider}, (Ptr{aws_allocator}, Ptr{aws_credentials_provider_login_options}), allocator, options)
 end
 
 """
@@ -2126,65 +2174,6 @@ Controls if signing adds a header containing the canonical request's body value
 end
 
 """
-    struct (unnamed at /home/runner/.julia/artifacts/bc0e251e4a1a213fe5e152a2369d36c1aa9437e1/include/aws/auth/signing_config.h:214:5)
-
-Documentation not found.
-"""
-struct var"struct (unnamed at /home/runner/.julia/artifacts/bc0e251e4a1a213fe5e152a2369d36c1aa9437e1/include/aws/auth/signing_config.h:214:5)"
-    data::NTuple{4, UInt8}
-end
-
-function Base.getproperty(x::Ptr{var"struct (unnamed at /home/runner/.julia/artifacts/bc0e251e4a1a213fe5e152a2369d36c1aa9437e1/include/aws/auth/signing_config.h:214:5)"}, f::Symbol)
-    f === :use_double_uri_encode && return (Ptr{UInt32}(x + 0), 0, 1)
-    f === :should_normalize_uri_path && return (Ptr{UInt32}(x + 0), 1, 1)
-    f === :omit_session_token && return (Ptr{UInt32}(x + 0), 2, 1)
-    return getfield(x, f)
-end
-
-function Base.getproperty(x::var"struct (unnamed at /home/runner/.julia/artifacts/bc0e251e4a1a213fe5e152a2369d36c1aa9437e1/include/aws/auth/signing_config.h:214:5)", f::Symbol)
-    r = Ref{var"struct (unnamed at /home/runner/.julia/artifacts/bc0e251e4a1a213fe5e152a2369d36c1aa9437e1/include/aws/auth/signing_config.h:214:5)"}(x)
-    ptr = Base.unsafe_convert(Ptr{var"struct (unnamed at /home/runner/.julia/artifacts/bc0e251e4a1a213fe5e152a2369d36c1aa9437e1/include/aws/auth/signing_config.h:214:5)"}, r)
-    fptr = getproperty(ptr, f)
-    begin
-        if fptr isa Ptr
-            return GC.@preserve(r, unsafe_load(fptr))
-        else
-            (baseptr, offset, width) = fptr
-            ty = eltype(baseptr)
-            baseptr32 = convert(Ptr{UInt32}, baseptr)
-            u64 = GC.@preserve(r, unsafe_load(baseptr32))
-            if offset + width > 32
-                u64 |= GC.@preserve(r, unsafe_load(baseptr32 + 4)) << 32
-            end
-            u64 = u64 >> offset & (1 << width - 1)
-            return u64 % ty
-        end
-    end
-end
-
-function Base.setproperty!(x::Ptr{var"struct (unnamed at /home/runner/.julia/artifacts/bc0e251e4a1a213fe5e152a2369d36c1aa9437e1/include/aws/auth/signing_config.h:214:5)"}, f::Symbol, v)
-    fptr = getproperty(x, f)
-    if fptr isa Ptr
-        unsafe_store!(getproperty(x, f), v)
-    else
-        (baseptr, offset, width) = fptr
-        baseptr32 = convert(Ptr{UInt32}, baseptr)
-        u64 = unsafe_load(baseptr32)
-        straddle = offset + width > 32
-        if straddle
-            u64 |= unsafe_load(baseptr32 + 4) << 32
-        end
-        mask = 1 << width - 1
-        u64 &= ~(mask << offset)
-        u64 |= (unsigned(v) & mask) << offset
-        unsafe_store!(baseptr32, u64 & typemax(UInt32))
-        if straddle
-            unsafe_store!(baseptr32 + 4, u64 >> 32)
-        end
-    end
-end
-
-"""
     aws_signing_config_aws
 
 A configuration structure for use in AWS-related signing. Currently covers sigv4 only, but is not required to.
@@ -2202,7 +2191,7 @@ function Base.getproperty(x::Ptr{aws_signing_config_aws}, f::Symbol)
     f === :date && return Ptr{aws_date_time}(x + 48)
     f === :should_sign_header && return Ptr{Ptr{aws_should_sign_header_fn}}(x + 184)
     f === :should_sign_header_ud && return Ptr{Ptr{Cvoid}}(x + 192)
-    f === :flags && return Ptr{var"struct (unnamed at /home/runner/.julia/artifacts/bc0e251e4a1a213fe5e152a2369d36c1aa9437e1/include/aws/auth/signing_config.h:214:5)"}(x + 200)
+    f === :flags && return Ptr{__JL_Ctag_145}(x + 200)
     f === :signed_body_value && return Ptr{aws_byte_cursor}(x + 208)
     f === :signed_body_header && return Ptr{aws_signed_body_header_type}(x + 224)
     f === :credentials && return Ptr{Ptr{aws_credentials}}(x + 232)
@@ -2220,6 +2209,14 @@ end
 
 function Base.setproperty!(x::Ptr{aws_signing_config_aws}, f::Symbol, v)
     unsafe_store!(getproperty(x, f), v)
+end
+
+function Base.propertynames(x::aws_signing_config_aws, private::Bool = false)
+    (:config_type, :algorithm, :signature_type, :region, :service, :date, :should_sign_header, :should_sign_header_ud, :flags, :signed_body_value, :signed_body_header, :credentials, :credentials_provider, :expiration_in_seconds, if private
+            fieldnames(typeof(x))
+        else
+            ()
+        end...)
 end
 
 """
