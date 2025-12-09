@@ -137,6 +137,7 @@ struct aws_imds_client_options
     shutdown_options::aws_imds_client_shutdown_options
     bootstrap::Ptr{aws_client_bootstrap}
     retry_strategy::Ptr{aws_retry_strategy}
+    proxy_ev_settings::Ptr{proxy_env_var_settings}
     imds_version::aws_imds_protocol_version
     ec2_metadata_v1_disabled::Bool
     function_table::Ptr{aws_auth_http_system_vtable}
@@ -857,6 +858,7 @@ struct aws_credentials_provider_imds_options
     imds_version::aws_imds_protocol_version
     ec2_metadata_v1_disabled::Bool
     function_table::Ptr{aws_auth_http_system_vtable}
+    proxy_ev_settings::Ptr{proxy_env_var_settings}
 end
 
 """
@@ -868,6 +870,7 @@ struct aws_credentials_provider_ecs_environment_options
     shutdown_options::aws_credentials_provider_shutdown_options
     bootstrap::Ptr{aws_client_bootstrap}
     tls_ctx::Ptr{aws_tls_ctx}
+    proxy_ev_settings::Ptr{proxy_env_var_settings}
     function_table::Ptr{aws_auth_http_system_vtable}
 end
 
@@ -884,6 +887,7 @@ struct aws_credentials_provider_ecs_options
     auth_token_file_path::aws_byte_cursor
     auth_token::aws_byte_cursor
     tls_ctx::Ptr{aws_tls_ctx}
+    proxy_ev_settings::Ptr{proxy_env_var_settings}
     function_table::Ptr{aws_auth_http_system_vtable}
     port::UInt32
 end
@@ -903,6 +907,7 @@ struct aws_credentials_provider_x509_options
     role_alias::aws_byte_cursor
     endpoint::aws_byte_cursor
     proxy_options::Ptr{aws_http_proxy_options}
+    proxy_ev_settings::Ptr{proxy_env_var_settings}
     function_table::Ptr{aws_auth_http_system_vtable}
 end
 
@@ -918,6 +923,7 @@ struct aws_credentials_provider_sts_web_identity_options
     bootstrap::Ptr{aws_client_bootstrap}
     config_profile_collection_cached::Ptr{aws_profile_collection}
     tls_ctx::Ptr{aws_tls_ctx}
+    proxy_ev_settings::Ptr{proxy_env_var_settings}
     function_table::Ptr{aws_auth_http_system_vtable}
     profile_name_override::aws_byte_cursor
     region::aws_byte_cursor
@@ -938,6 +944,7 @@ struct aws_credentials_provider_sso_options
     config_file_cached::Ptr{aws_profile_collection}
     bootstrap::Ptr{aws_client_bootstrap}
     tls_ctx::Ptr{aws_tls_ctx}
+    proxy_ev_settings::Ptr{proxy_env_var_settings}
     function_table::Ptr{aws_auth_http_system_vtable}
     system_clock_fn::Ptr{aws_io_clock_fn}
 end
@@ -956,6 +963,7 @@ struct aws_credentials_provider_sts_options
     external_id::aws_byte_cursor
     duration_seconds::UInt16
     http_proxy_options::Ptr{aws_http_proxy_options}
+    proxy_ev_settings::Ptr{proxy_env_var_settings}
     profile_collection_cached::Ptr{aws_profile_collection}
     profile_name_override::aws_byte_cursor
     config_file_name_override::aws_byte_cursor
@@ -989,6 +997,7 @@ struct aws_credentials_provider_chain_default_options
     profile_collection_cached::Ptr{aws_profile_collection}
     profile_name_override::aws_byte_cursor
     skip_environment_credentials_provider::Bool
+    proxy_ev_settings::Ptr{proxy_env_var_settings}
 end
 
 # typedef int ( aws_credentials_provider_delegate_get_credentials_fn ) ( void * delegate_user_data , aws_on_get_credentials_callback_fn callback , void * callback_user_data )
@@ -1045,6 +1054,7 @@ struct aws_credentials_provider_cognito_options
     bootstrap::Ptr{aws_client_bootstrap}
     tls_ctx::Ptr{aws_tls_ctx}
     http_proxy_options::Ptr{aws_http_proxy_options}
+    proxy_ev_settings::Ptr{proxy_env_var_settings}
     function_table::Ptr{aws_auth_http_system_vtable}
     get_token_pairs::Ptr{aws_credentials_provider_cognito_get_token_pairs_async_fn}
     get_token_pairs_user_data::Ptr{Cvoid}
@@ -1065,6 +1075,7 @@ struct aws_credentials_provider_login_options
     config_file_cached::Ptr{aws_profile_collection}
     bootstrap::Ptr{aws_client_bootstrap}
     tls_ctx::Ptr{aws_tls_ctx}
+    proxy_ev_settings::Ptr{proxy_env_var_settings}
     function_table::Ptr{aws_auth_http_system_vtable}
     system_clock_fn::Ptr{aws_io_clock_fn}
 end
