@@ -74,6 +74,29 @@ jobs:
 
       - uses: julia-actions/cache@v2
 
+      - name: Inspect disk usage before generator
+        if: env.update_needed == 'true'
+        run: |
+          echo "Disk usage before cleanup:"
+          df -h
+          echo "Preinstalled SDK sizes (if present):"
+          sudo du -sh /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL 2>/dev/null || true
+
+      - name: Free disk space for generator
+        if: env.update_needed == 'true'
+        run: |
+          set -euxo pipefail
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /opt/hostedtoolcache/CodeQL || true
+          sudo rm -rf /tmp/* || true
+          sudo docker system prune --all --volumes --force || true
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
+          echo "Disk usage after cleanup:"
+          df -h
+
       - name: Run the generator
         if: env.update_needed == 'true'
         run: |
