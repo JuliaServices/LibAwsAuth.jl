@@ -56,13 +56,18 @@ jobs:
           if [[ "$JLL_VERSION" != "$PROJECT_VERSION" ]]; then
             echo "New version found: $JLL_VERSION (was $PROJECT_VERSION)"
             echo "update_needed=true" >> $GITHUB_ENV
+            echo "update_needed=true" >> $GITHUB_OUTPUT
           else
             echo "No update needed."
-            exit 0
+            echo "update_needed=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Skip update
+        if: steps.check_version.outputs.update_needed != 'true'
+        run: echo "Versions already match; skipping generator run."
+
       - name: Update Project.toml Versions
-        if: env.update_needed == 'true'
+        if: steps.check_version.outputs.update_needed == 'true'
         run: |
           sed -i "s/${{ env.JLL_NAME }} = \"=$PROJECT_VERSION\"/${{ env.JLL_NAME }} = \"=$JLL_VERSION\"/" ${{ env.LIBAWS_PATH }}/Project.toml
           sed -i "s/${{ env.JLL_NAME }} = \"=$PROJECT_VERSION\"/${{ env.JLL_NAME }} = \"=$JLL_VERSION\"/" ${{ env.LIBAWS_PATH }}/gen/Project.toml
@@ -72,10 +77,8 @@ jobs:
           NEW_LIBAWS_VERSION=$(echo $CURRENT_LIBAWS_VERSION | awk -F. '{print $1"."$2"."'"$PATCH"'}')
           sed -i "s/version = \"$CURRENT_LIBAWS_VERSION\"/version = \"$NEW_LIBAWS_VERSION\"/" ${{ env.LIBAWS_PATH }}/Project.toml
 
-      - uses: julia-actions/cache@v2
-
-      - name: Inspect disk usage before generator
-        if: env.update_needed == 'true'
+      - name: Inspect disk usage before cleanup
+        if: steps.check_version.outputs.update_needed == 'true'
         run: |
           echo "Disk usage before cleanup:"
           df -h
@@ -83,7 +86,7 @@ jobs:
           sudo du -sh /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL 2>/dev/null || true
 
       - name: Free disk space for generator
-        if: env.update_needed == 'true'
+        if: steps.check_version.outputs.update_needed == 'true'
         run: |
           set -euxo pipefail
           sudo rm -rf /usr/share/dotnet || true
@@ -97,14 +100,17 @@ jobs:
           echo "Disk usage after cleanup:"
           df -h
 
+      - uses: julia-actions/cache@v2
+        if: steps.check_version.outputs.update_needed == 'true'
+
       - name: Run the generator
-        if: env.update_needed == 'true'
+        if: steps.check_version.outputs.update_needed == 'true'
         run: |
           cd ${{ env.LIBAWS_PATH }}
           ./gen/generate.sh
 
       - name: Check for Changes in Bindings
-        if: env.update_needed == 'true'
+        if: steps.check_version.outputs.update_needed == 'true'
         id: check_bindings
         run: |
           cd ${{ env.LIBAWS_PATH }}
