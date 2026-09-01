@@ -124,6 +124,17 @@ Documentation not found.
 end
 
 """
+    aws_imds_endpoint_mode
+
+IP address mode for IMDS connections
+"""
+@cenum aws_imds_endpoint_mode::UInt32 begin
+    AWS_IMDS_ENDPOINT_MODE_DEFAULT = 0
+    AWS_IMDS_ENDPOINT_MODE_IPV4 = 1
+    AWS_IMDS_ENDPOINT_MODE_IPV6 = 2
+end
+
+"""
 Documentation not found.
 """
 mutable struct aws_auth_http_system_vtable end
@@ -140,6 +151,8 @@ struct aws_imds_client_options
     proxy_ev_settings::Ptr{proxy_env_var_settings}
     imds_version::aws_imds_protocol_version
     ec2_metadata_v1_disabled::Bool
+    imds_endpoint::aws_byte_cursor
+    imds_endpoint_mode::aws_imds_endpoint_mode
     function_table::Ptr{aws_auth_http_system_vtable}
 end
 
@@ -821,6 +834,7 @@ struct aws_credentials_provider_profile_options
     bootstrap::Ptr{aws_client_bootstrap}
     tls_ctx::Ptr{aws_tls_ctx}
     function_table::Ptr{aws_auth_http_system_vtable}
+    proxy_ev_settings::Ptr{proxy_env_var_settings}
 end
 
 """
@@ -859,6 +873,8 @@ struct aws_credentials_provider_imds_options
     ec2_metadata_v1_disabled::Bool
     function_table::Ptr{aws_auth_http_system_vtable}
     proxy_ev_settings::Ptr{proxy_env_var_settings}
+    imds_endpoint::aws_byte_cursor
+    imds_endpoint_mode::aws_imds_endpoint_mode
 end
 
 """
@@ -916,7 +932,7 @@ end
 
 Configuration options for the STS web identity provider
 
-Sts with web identity credentials provider sources a set of temporary security credentials for users who have been authenticated in a mobile or web application with a web identity provider. Example providers include Amazon Cognito, Login with Amazon, Facebook, Google, or any OpenID Connect-compatible identity provider like Elastic Kubernetes Service https://docs.aws.amazon.com/STS/latest/APIReference/API\\_AssumeRoleWithWebIdentity.html The required parameters used in the request (region, roleArn, sessionName, tokenFilePath) are automatically resolved by SDK from envrionment variables or config file if not set. --------------------------------------------------------------------------------- | Parameter | Environment Variable Name | Config File Property Name | ---------------------------------------------------------------------------------- | region | AWS\\_REGION/AWS\\_DEFAULT\\_REGION| region | | role\\_arn | AWS\\_ROLE\\_ARN | role\\_arn | | role\\_session\\_name | AWS\\_ROLE\\_SESSION\\_NAME | role\\_session\\_name | | token\\_file\\_path | AWS\\_WEB\\_IDENTITY\\_TOKEN\\_FILE | web\\_identity\\_token\\_file | |--------------------------------------------------------------------------------| The order of resolution is the following 1. Parameters 2. Environment Variables (in case of region, the AWS\\_REGION is preferred over the AWS\\_DEFAULT\\_REGION) 3. Config File
+Sts with web identity credentials provider sources a set of temporary security credentials for users who have been authenticated in a mobile or web application with a web identity provider. Example providers include Amazon Cognito, Login with Amazon, Facebook, Google, or any OpenID Connect-compatible identity provider like Elastic Kubernetes Service https://docs.aws.amazon.com/STS/latest/APIReference/API\\_AssumeRoleWithWebIdentity.html The required parameters used in the request (region, roleArn, sessionName, tokenFilePath) are automatically resolved by SDK from environment variables or config file if not set. --------------------------------------------------------------------------------- | Parameter | Environment Variable Name | Config File Property Name | ---------------------------------------------------------------------------------- | region | AWS\\_REGION/AWS\\_DEFAULT\\_REGION| region | | role\\_arn | AWS\\_ROLE\\_ARN | role\\_arn | | role\\_session\\_name | AWS\\_ROLE\\_SESSION\\_NAME | role\\_session\\_name | | token\\_file\\_path | AWS\\_WEB\\_IDENTITY\\_TOKEN\\_FILE | web\\_identity\\_token\\_file | |--------------------------------------------------------------------------------| The order of resolution is the following 1. Parameters 2. Environment Variables (in case of region, the AWS\\_REGION is preferred over the AWS\\_DEFAULT\\_REGION) 3. Config File
 """
 struct aws_credentials_provider_sts_web_identity_options
     shutdown_options::aws_credentials_provider_shutdown_options
