@@ -2201,6 +2201,35 @@ Controls if signing adds a header containing the canonical request's body value
 end
 
 """
+    __JL_Ctag_145
+
+Documentation not found.
+"""
+struct __JL_Ctag_145
+    use_double_uri_encode::UInt32
+    should_normalize_uri_path::UInt32
+    omit_session_token::UInt32
+end
+function Base.getproperty(x::Ptr{__JL_Ctag_145}, f::Symbol)
+    f === :use_double_uri_encode && return (Ptr{UInt32}(x + 0), 0, 1)
+    f === :should_normalize_uri_path && return (Ptr{UInt32}(x + 0), 1, 1)
+    f === :omit_session_token && return (Ptr{UInt32}(x + 0), 2, 1)
+    return getfield(x, f)
+end
+
+function Base.getproperty(x::__JL_Ctag_145, f::Symbol)
+    r = Ref{__JL_Ctag_145}(x)
+    ptr = Base.unsafe_convert(Ptr{__JL_Ctag_145}, r)
+    fptr = getproperty(ptr, f)
+    GC.@preserve r unsafe_load(fptr)
+end
+
+function Base.setproperty!(x::Ptr{__JL_Ctag_145}, f::Symbol, v)
+    unsafe_store!(getproperty(x, f), v)
+end
+
+
+"""
     aws_signing_config_aws
 
 A configuration structure for use in AWS-related signing. Currently covers sigv4 only, but is not required to.
